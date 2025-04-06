@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <h2 class="text-center">Student Management System</h2>
+
+        <!-- Student Form -->
+        <div class="card p-4 mt-3">
+            <form id="studentForm">
+                <input type="hidden" id="studentId">
+                <div class="mb-3">
+                    <label>Name</label>
+                    <input type="text" class="form-control" id="name" required>
+                </div>
+                <div class="mb-3">
+                    <label>Age</label>
+                    <input type="number" class="form-control" id="age" required>
+                </div>
+                <div class="mb-3">
+                    <label>Email</label>
+                    <input type="email" class="form-control" id="email" required>
+                </div>
+                <button type="submit" class="btn btn-success w-100">Save Student</button>
+            </form>
+        </div>
+
+        <!-- Student List Table -->
+        <table class="table mt-4">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Email</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="studentTable"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const API_URL = "http://127.0.0.1:5000";
+
+        // Fetch all students
+        function fetchStudents() {
+            fetch(API_URL + "/student/lists/")
+                .then(response => response.json())
+                .then(data => {
+                    const studentTable = document.getElementById("studentTable");
+                    studentTable.innerHTML = "";
+                    data.forEach(student => {
+                        studentTable.innerHTML += `
+                            <tr>
+                                <td>${student.id}</td>
+                                <td>${student.name}</td>
+                                <td>${student.age}</td>
+                                <td>${student.email}</td>
+                                <td>
+                                    <button class="btn btn-warning btn-sm" onclick="editStudent(${student.id}, '${student.name}', ${student.age}, '${student.email}')">Edit</button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteStudent(${student.id})">Delete</button>
+                                </td>
+                            </tr>`;
+                    });
+                });
+        }
+
+        // Add or Update Student
+        document.getElementById("studentForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            const studentId = document.getElementById("studentId").value;
+            const name = document.getElementById("name").value;
+            const age = document.getElementById("age").value;
+            const email = document.getElementById("email").value;
+
+            const data = { name, age, email };
+            const url = studentId ? API_URL + `/student/update/${studentId}` : API_URL + "/student/add/";
+            const method = studentId ? "PATCH" : "POST";
+
+            fetch(url, {
+                method: method,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+            }).then(() => {
+                document.getElementById("studentForm").reset();
+                fetchStudents();
+            });
+        });
+
+        // Edit Student
+        function editStudent(id, name, age, email) {
+            document.getElementById("studentId").value = id;
+            document.getElementById("name").value = name;
+            document.getElementById("age").value = age;
+            document.getElementById("email").value = email;
+        }
+
+        // Delete Student
+        function deleteStudent(id) {
+            if (confirm("Are you sure you want to delete this student?")) {
+                fetch(API_URL + `/student/delete/${id}`, { method: "DELETE" })
+                    .then(() => fetchStudents());
+            }
+        }
+
+        // Load Students on Page Load
+        document.addEventListener("DOMContentLoaded", fetchStudents);
+    </script>
+</body>
+</html>
